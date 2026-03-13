@@ -1,0 +1,139 @@
+[
+  {
+    "id": "intro",
+    "start": 0,
+    "end": 8,
+    "text": "今天介绍一个视频旁白生成工作流，只需要三步，就能把一段文案变成带语音和字幕的完整视频。",
+    "visual": {
+      "type": "title",
+      "title": "Video Narrator",
+      "subtitle": "3 步生成带旁白 + 字幕的视频",
+      "style": "dark-tech",
+      "animation": "fade-in + underline-sweep"
+    }
+  },
+  {
+    "id": "pipeline-overview",
+    "start": 8,
+    "end": 18,
+    "text": "整个管线分为三步。第一步用Remotion渲染纯视频画面，第二步用edge-tts生成语音和字幕时间戳，第三步用ffmpeg把视频、音频和字幕合并为最终输出。",
+    "visual": {
+      "type": "flow-diagram",
+      "nodes": [
+        {"label": "Remotion", "icon": "🎬", "desc": "渲染纯视频"},
+        {"label": "edge-tts", "icon": "🎙️", "desc": "语音 + SRT"},
+        {"label": "ffmpeg", "icon": "🔧", "desc": "合并输出"}
+      ],
+      "arrows": "left-to-right",
+      "animation": "nodes-appear-sequentially"
+    }
+  },
+  {
+    "id": "step1-remotion",
+    "start": 18,
+    "end": 30,
+    "text": "第一步，Remotion是一个React框架，用代码写视频。每个场景是一个React组件，支持动画、转场、图表等任何你能用CSS和JavaScript实现的效果。渲染出来的是没有声音的纯画面视频。",
+    "visual": {
+      "type": "split-view",
+      "left": {
+        "type": "code-block",
+        "language": "tsx",
+        "code": "<TransitionSeries>\n  <Scene1 />\n  <Transition fade />\n  <Scene2 />\n</TransitionSeries>",
+        "highlight": [1, 3]
+      },
+      "right": {
+        "type": "preview",
+        "desc": "渲染结果预览（场景切换 + fade 转场）"
+      },
+      "animation": "code-first-then-preview"
+    }
+  },
+  {
+    "id": "step2-tts",
+    "start": 30,
+    "end": 45,
+    "text": "第二步是关键创新。edge-tts调用微软的语音合成接口，免费且音质很好。我们用它的WordBoundary参数，在生成音频的同时获取每个词的精确时间戳，直接输出SRT字幕文件。完全不需要语音识别模型，没有识别错误的问题。",
+    "visual": {
+      "type": "card-stack",
+      "cards": [
+        {
+          "title": "传统方案 ❌",
+          "items": ["TTS 生成音频", "Whisper 识别回文字", "对齐修正错误"],
+          "style": "dim"
+        },
+        {
+          "title": "新方案 ✅",
+          "items": ["TTS 生成音频", "同步获取 WordBoundary", "直接输出 SRT"],
+          "style": "highlight-green"
+        }
+      ],
+      "animation": "old-card-shrink-new-card-enlarge"
+    }
+  },
+  {
+    "id": "step2-demo",
+    "start": 45,
+    "end": 55,
+    "text": "来看实际效果。这段中文输入经过edge-tts后，每个词都带有毫秒级的起止时间。脚本会自动按标点和字数分组，生成适合阅读的字幕块。",
+    "visual": {
+      "type": "terminal-replay",
+      "lines": [
+        "$ python3 generate_tts.py --scenes-json scenes.json",
+        "=== Generating TTS (YunxiNeural) ===",
+        "  [  100ms + 350ms] 今天",
+        "  [  475ms + 275ms] 分享",
+        "  [  762ms + 150ms] 一个",
+        "  [  938ms + 362ms] 有趣",
+        "=== Generating subtitles ===",
+        "  ✅ 6 subtitle entries → subtitles.srt"
+      ],
+      "animation": "typewriter-line-by-line"
+    }
+  },
+  {
+    "id": "step3-ffmpeg",
+    "start": 55,
+    "end": 67,
+    "text": "第三步用ffmpeg-full合并所有素材。一条命令完成：输入纯视频和音频，通过libass滤镜烧录SRT字幕，输出最终的MP4文件。相比Remotion二次渲染，这种方式快得多。",
+    "visual": {
+      "type": "command-block",
+      "command": "ffmpeg -i video.mp4 -i narration.mp3\n  -vf \"subtitles=subtitles.srt\"\n  -c:v libx264 -c:a aac\n  final.mp4",
+      "annotations": [
+        {"line": 1, "label": "输入：纯视频 + 音频"},
+        {"line": 2, "label": "libass 烧录字幕"},
+        {"line": 4, "label": "一步输出最终视频"}
+      ],
+      "animation": "highlight-each-annotation"
+    }
+  },
+  {
+    "id": "comparison",
+    "start": 67,
+    "end": 77,
+    "text": "对比一下改进前后。旧方案需要五步，依赖Whisper语音识别，Remotion渲染两次。新方案三步搞定，无需任何AI识别模型，渲染只需要一次。",
+    "visual": {
+      "type": "comparison-table",
+      "columns": ["", "旧方案", "新方案"],
+      "rows": [
+        ["步骤数", "5 步", "3 步"],
+        ["ASR 依赖", "Whisper ❌", "无需 ✅"],
+        ["Remotion 渲染", "2 次", "1 次"],
+        ["字幕来源", "识别（有错误）", "TTS 原始时间戳"],
+        ["速度", "慢", "快 2-3x"]
+      ],
+      "animation": "rows-slide-in"
+    }
+  },
+  {
+    "id": "outro",
+    "start": 77,
+    "end": 85,
+    "text": "这就是整个工作流。场景脚本JSON定义内容，Remotion画视频，edge-tts出声音和字幕，ffmpeg拼成品。三个工具各司其职，组合出一个高效的视频旁白生成管线。",
+    "visual": {
+      "type": "pipeline-recap",
+      "flow": "JSON → 🎬 Remotion → 🎙️ edge-tts → 🔧 ffmpeg → 📹 Final",
+      "badge": "video-narrator skill",
+      "animation": "flow-pulse-then-badge-stamp"
+    }
+  }
+]
